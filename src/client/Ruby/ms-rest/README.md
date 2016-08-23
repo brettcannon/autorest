@@ -24,6 +24,17 @@ and reference it in your code:
 ```Ruby
 require 'ms_rest'
 ```
+---
+If you encounter `Faraday::SSLError` like below 
+```Ruby
+Faraday::SSLError:
+            SSL_connect returned=1 errno=0 state=SSLv3 read server certificate B: certificate verify failed
+```
+that implies that ruby's OpenSSL was unable to verify the peer certificate while establihsing an SSL connection. You can provide Faraday ssl options or opt-in to use already bundled certificate using
+```Ruby
+MsRest.use_ssl_cert
+```
+---
 
 # Running tests
 
@@ -38,7 +49,7 @@ To start working on the gem the only additional dev dependecy is required - rspe
 Reference it in the gemfile and also add this line to your client's gemspec file:
 
 ```ruby
-spec.add_runtime_dependency 'ms_rest', '~> 0.3.0'
+spec.add_runtime_dependency 'ms_rest', '~> 0.4.0'
 ```
 
 Don't forget to correct the version.
