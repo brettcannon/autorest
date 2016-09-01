@@ -5,13 +5,32 @@ from msrest.authentication import OAuthTokenAuthentication
 
 
 class AADMixin(OAuthTokenAuthentication):
+
+    auth_uri: str
+    token_uri: str
+    verify: bool
+    cred_store: str
+    resource: str
+    state: requests_oauthlib.oauth2_session.generate_token() // XXX
+    store_key: str
+    token: dict
+    # OAuthTokenAuthentication
+    scheme: str
+    id: str
+
     def signed_session(self) -> requests_oauthlib.OAuth2Session: ...
     def clear_cached_token(self) -> None: ...
 
 class AADRefreshMixin(object):
+
+    token
+
     def refresh_session(self) -> requests.Session: ...
 
 class AADTokenCredentials(AADMixin):
+
+    token
+
     def __init__(self, token: dict, client_id: str = ..., **kwargs):
         """"Optional kwargs may include:
             - china (bool): Configure auth for China-based service,
@@ -31,6 +50,17 @@ class AADTokenCredentials(AADMixin):
         ...
 
 class UserPassCredentials(AADRefreshMixin, AADMixin):
+
+    store_key
+    username
+    password
+    secret
+    client
+    id
+    resource
+    verify
+    token
+
     def __init__(self, username: str, password: str, client_id: str = ...,
                  secret: str = ..., **kwargs):
         """Optional kwargs may include:
@@ -52,6 +82,15 @@ class UserPassCredentials(AADRefreshMixin, AADMixin):
     def set_token(self) -> None: ...
 
 class ServicePrincipalCredentials(AADRefreshMixin, AADMixin):
+
+    secret
+    client
+    id
+    resource
+    secret
+    verify
+    token
+
     def __init__(self, client_id: str, secret: str, **kwargs):
         """Optional kwargs may include:
             - china (bool): Configure auth for China-based service,
@@ -72,6 +111,15 @@ class ServicePrincipalCredentials(AADRefreshMixin, AADMixin):
     def set_token(self) -> None: ...
 
 class InteractiveCredentials(AADMixin):
+
+    redirect
+    id
+    state
+    auth_uri
+    resource
+    token_uri
+    token
+
     def __init__(self, client_id: str, redirect: str, **kwargs):
         """Optional kwargs may include:
             - china (bool): Configure auth for China-based service,
