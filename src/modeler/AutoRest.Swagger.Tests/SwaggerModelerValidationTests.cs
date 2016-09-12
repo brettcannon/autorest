@@ -21,10 +21,20 @@ namespace AutoRest.Swagger.Tests
             AssertOnlyValidationMessage(messages.Where(m => m.Severity == LogEntrySeverity.Warning), validationType);
         }
 
+        internal static void AssertOnlyValidationWarning(this IEnumerable<ValidationMessage> messages, Type validationType, int count)
+        {
+            AssertOnlyValidationMessage(messages.Where(m => m.Severity == LogEntrySeverity.Warning), validationType, count);
+        }
         internal static void AssertOnlyValidationMessage(this IEnumerable<ValidationMessage> messages, Type validationType)
         {
             // checks that the collection has one item, and that it is the correct message type.
-            Assert.Collection(messages , message => Assert.Equal(validationType, message.Type));
+            Assert.Collection(messages, message => Assert.Equal(validationType, message.Type));
+        }
+
+        internal static void AssertOnlyValidationMessage(this IEnumerable<ValidationMessage> messages, Type validationType, int count)
+        {
+            // checks that the collection has the right number of items and each is the correct type.
+            Assert.Equal(count, messages.Where(message => message.Type == validationType).Count());
         }
     }
 
@@ -122,6 +132,13 @@ namespace AutoRest.Swagger.Tests
         }
 
         [Fact]
+        public void InvalidConstraintValidation()
+        {
+            var messages = ValidateSwagger(Path.Combine("Swagger", "swagger-validation.json"));
+            messages.AssertOnlyValidationWarning(typeof(InvalidConstraint), 18);
+        }
+
+        [Fact]
         public void NestedPropertiesValidation()
         {
             var messages = ValidateSwagger(Path.Combine("Swagger", "Validation", "nested-properties.json"));
@@ -147,6 +164,20 @@ namespace AutoRest.Swagger.Tests
         {
             var messages = ValidateSwagger(Path.Combine("Swagger", "Validation", "parameter-missing-description.json"));
             messages.AssertOnlyValidationMessage(typeof(ParameterDescriptionRequired));
+        }
+
+        [Fact]
+        public void PageableNextLinkNotModeledValidation()
+        {
+            var messages = ValidateSwagger(Path.Combine("Swagger", "Validation", "pageable-nextlink-not-modeled.json"));
+            messages.AssertOnlyValidationMessage(typeof(NextLinkPropertyMustExist));
+        }
+
+        [Fact]
+        public void Pageable200ResponseNotModeledValidation()
+        {
+            var messages = ValidateSwagger(Path.Combine("Swagger", "Validation", "pageable-no-200-response.json"));
+            messages.Any(m => m.Type == typeof(PageableRequires200Response));
         }
     }
 }
