@@ -1,6 +1,6 @@
 ﻿#--------------------------------------------------------------------------
 #
-# Copyright (c) Microsoft Corporation. All rights reserved. 
+# Copyright (c) Microsoft Corporation. All rights reserved.
 #
 # The MIT License (MIT)
 #
@@ -54,7 +54,7 @@ class TestInteractiveCredentials(unittest.TestCase):
     def setUp(self):
         self.cfg = AzureConfiguration("https://my_service.com")
         return super(TestInteractiveCredentials, self).setUp()
-    
+
     def test_http(self):
 
         test_uri = "http://my_service.com"
@@ -282,8 +282,8 @@ class TestInteractiveCredentials(unittest.TestCase):
         session = mock.create_autospec(OAuth2Session)
         with mock.patch.object(
             ServicePrincipalCredentials, '_setup_session', return_value=session):
-            
-            creds = ServicePrincipalCredentials("client_id", "secret", 
+
+            creds = ServicePrincipalCredentials("client_id", "secret",
                                                 verify=False, tenant="private")
 
             session.fetch_token.assert_called_with(
@@ -294,7 +294,7 @@ class TestInteractiveCredentials(unittest.TestCase):
 
         with mock.patch.object(
             ServicePrincipalCredentials, '_setup_session', return_value=session):
-            
+
             creds = ServicePrincipalCredentials("client_id", "secret", china=True,
                                                 verify=False, tenant="private")
 
@@ -336,8 +336,8 @@ class TestInteractiveCredentials(unittest.TestCase):
         session = mock.create_autospec(OAuth2Session)
         with mock.patch.object(
             UserPassCredentials, '_setup_session', return_value=session):
-            
-            creds = UserPassCredentials("my_username", "my_password", 
+
+            creds = UserPassCredentials("my_username", "my_password",
                                         verify=False, tenant="private", resource='resource')
 
             session.fetch_token.assert_called_with(
@@ -347,7 +347,7 @@ class TestInteractiveCredentials(unittest.TestCase):
 
         with mock.patch.object(
             UserPassCredentials, '_setup_session', return_value=session):
-            
+
             creds = UserPassCredentials("my_username", "my_password", client_id="client_id",
                                         verify=False, tenant="private", china=True)
 
@@ -355,6 +355,21 @@ class TestInteractiveCredentials(unittest.TestCase):
                 "https://login.chinacloudapi.cn/private/oauth2/token",
                 client_id="client_id", username='my_username',
                 password='my_password', resource='https://management.core.chinacloudapi.cn/', verify=False)
+
+
+import msrestazure.azure_active_directory as aad
+
+
+class TestAdalAuthentication(unittest.TestCase):
+
+    @mock.patch("adal.AuthenticationContext")
+    def test_username_password(self, MockContext):
+        username = 'msrestazure-test'
+        password = 'password'
+        creds = aad.AdalUserPassCredentials(username, password)
+        session = creds.signed_session()
+        # XXX validate results
+
 
 
 if __name__ == '__main__':

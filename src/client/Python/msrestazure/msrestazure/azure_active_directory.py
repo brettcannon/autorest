@@ -532,7 +532,7 @@ import adal
 
 from msrest.authentication import Authentication
 
-from azure.cli.core._util import CLIError
+#from azure.cli.core._util import CLIError
 
 class AdalAuthentication(Authentication):#pylint: disable=too-few-public-methods
 
@@ -559,7 +559,8 @@ class AdalAuthentication(Authentication):#pylint: disable=too-few-public-methods
 
 # _profile.py
 _AUTH_CTX_FACTORY = lambda authority, cache: adal.AuthenticationContext(authority, cache=cache)
-
+_TOKEN_ENTRY_TOKEN_TYPE = 'tokenType'
+_ACCESS_TOKEN = 'accessToken'
 
 class Profile(object):
     def __init__(self, storage=None, auth_ctx_factory=None):
@@ -744,7 +745,7 @@ class Profile(object):
 
 
 class CredsCache(object):
-    '''Caches AAD tokena and service principal secrets, and persistence will
+    '''Caches AAD tokens and service principal secrets, and persistence will
     also be handled
     '''
     def __init__(self, auth_ctx_factory=None):
@@ -852,3 +853,28 @@ class CredsCache(object):
     def remove_all_cached_creds(self):
         #we can clear file contents, but deleting it is simpler
         _delete_file(self._token_file)
+
+######################################################################
+class AdalUserPassCredentials(Authentication):
+
+    def __init__(self, username, password, client_id=None):
+        if not client_id:
+            # Default to Xplat Client ID.
+            client_id = '04b07795-8ddb-461a-bbee-02f9e1bf7b46'
+        self.username = username
+        self.password = password
+        self.client_id = client_id
+        # XXX typically comes through **kwargs
+        self.authority = "/".join(['https://login.microsoftonline.com',
+                                   'common'])
+        self.resource = 'https://management.core.windows.net/'
+
+    def signed_session(self):
+        session = super(AdalUserPassCredentials, self).signed_session()
+        context = adal.AuthenticationContext(self.authority)
+        token_entry = context.acquire_token_with_username_password(
+                self.resource, self.username, self.password, self.client_id)
+        header = "{} {}".format(token_entry[_TOKEN_ENTRY_TOKEN_TYPE],
+                                token_entry[_ACCESS_TOKEN])
+        session.headers['Authorization'] = header
+        return session
