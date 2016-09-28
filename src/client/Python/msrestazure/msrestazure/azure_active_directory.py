@@ -858,6 +858,7 @@ class CredsCache(object):
 class AdalUserPassCredentials(Authentication):
 
     def __init__(self, username, password, client_id=None):
+        super(AdalUserPassCredentials, self).__init__()
         if not client_id:
             # Default to Xplat Client ID.
             client_id = '04b07795-8ddb-461a-bbee-02f9e1bf7b46'
