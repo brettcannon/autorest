@@ -362,13 +362,18 @@ import msrestazure.azure_active_directory as aad
 
 class TestAdalAuthentication(unittest.TestCase):
 
-    @mock.patch("adal.AuthenticationContext")
+    @mock.patch("adal.AuthenticationContext", autospec=True)
     def test_username_password(self, MockContext):
         username = 'msrestazure-test'
         password = 'password'
         creds = aad.AdalUserPassCredentials(username, password)
         session = creds.signed_session()
-        # XXX validate results
+        init_call = mock.call('https://login.microsoftonline.com/common')
+        acquire_call = init_call.acquire_token_with_username_password(
+                'https://management.core.windows.net/', username, password,
+                '04b07795-8ddb-461a-bbee-02f9e1bf7b46')
+        self.assertEqual(MockContext.mock_calls[:2], [init_call, acquire_call])
+        # XXX test session value
 
 
 
