@@ -372,8 +372,11 @@ class TestAdalAuthentication(unittest.TestCase):
         acquire_call = init_call.acquire_token_with_username_password(
                 'https://management.core.windows.net/', username, password,
                 '04b07795-8ddb-461a-bbee-02f9e1bf7b46')
-        self.assertEqual(MockContext.mock_calls[:2], [init_call, acquire_call])
+        self.assertIn(init_call, MockContext.mock_calls)
+        self.assertIn(acquire_call, MockContext.mock_calls)
         # XXX test session value
+        #print(MockContext.mock_calls)
+        #print(MockContext.acquire_token_with_username_password.return_value)
 
 
 
