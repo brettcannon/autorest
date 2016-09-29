@@ -28,9 +28,9 @@ import ast
 import re
 import time
 try:
-    from urlparse import urlparse, parse_qs
+    from urlparse import urljoin, urlparse, parse_qs
 except ImportError:
-    from urllib.parse import urlparse, parse_qs
+    from urllib.parse import urljoin, urlparse, parse_qs
 
 import keyring
 from oauthlib.oauth2 import BackendApplicationClient, LegacyApplicationClient
@@ -855,27 +855,41 @@ class CredsCache(object):
         _delete_file(self._token_file)
 
 ######################################################################
-class AdalUserPassCredentials(Authentication):
+from msrest import authentication as msrest_auth
 
-    def __init__(self, username, password, client_id=None):
-        super(AdalUserPassCredentials, self).__init__()
-        if not client_id:
-            # Default to Xplat Client ID.
-            client_id = '04b07795-8ddb-461a-bbee-02f9e1bf7b46'
-        self.username = username
-        self.password = password
-        self.client_id = client_id
-        # XXX typically comes through **kwargs
-        self.authority = "/".join(['https://login.microsoftonline.com',
-                                   'common'])
-        self.resource = 'https://management.core.windows.net/'
+
+class AdalAuthentication(msrest_auth.Authentication):
+
+    def __init__(self, client_id="04b07795-8ddb-461a-bbee-02f9e1bf7b46",
+                 tenant="common",
+                 auth_endpoint="https://login.microsoftonline.com",
+                 resource="https://management.core.windows.net/"):
+        super(AdalAuthentication, self).__init__()
+        self.client_id = client_id  # Default value is xplat client ID.
+        self.authority = urljoin(auth_endpoint, tenant)
+        self.resource = resource
+
+    # @abc.abstractmethod if we didn't support Python 2.
+    def acquire_token(self, context):
+        raise NotImplementedError
 
     def signed_session(self):
-        session = super(AdalUserPassCredentials, self).signed_session()
+        session = super(AdalAuthentication, self).signed_session()
         context = adal.AuthenticationContext(self.authority)
-        token_entry = context.acquire_token_with_username_password(
-                self.resource, self.username, self.password, self.client_id)
+        token_entry = context.acquire_token(context)
         header = "{} {}".format(token_entry[_TOKEN_ENTRY_TOKEN_TYPE],
                                 token_entry[_ACCESS_TOKEN])
         session.headers['Authorization'] = header
         return session
+
+
+class AdalUserPassCredentials(AdalAuthentication):
+
+    def __init__(self, username, password, **kwargs):
+        super(AdalUserPassCredentials, self).__init__(**kwargs)
+        self.username = username
+        self.password = password
+
+    def acquire_token(self, context):
+        return context.acquire_token_with_username_password(
+                self.resource, self.username, self.password, self.client_id)

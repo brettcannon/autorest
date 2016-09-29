@@ -362,33 +362,21 @@ import msrestazure.azure_active_directory as aad
 
 class TestAdalAuthentication(unittest.TestCase):
 
-    @mock.patch("adal.AuthenticationContext", autospec=True)
-    def test_username_password(self, MockContext):
+    def test_base_init(self):
+        raise unittest.SkipTest
+
+    def test_signed_session(self):
+        raise unittest.SkipTest
+
+    def test_username_password(self):
         username = 'msrestazure-test'
         password = 'password'
-        token = {aad._TOKEN_ENTRY_TOKEN_TYPE: "token-type",
-                 aad._ACCESS_TOKEN: "access-token"}
-        # Using an explicit mock to control the return value of the acquire_*()
-        # call.
-        returned_context = mock.Mock()
-        MockContext.return_value = returned_context
-        returned_context.acquire_token_with_username_password.return_value = token
-
-        creds = aad.AdalUserPassCredentials(username, password)
-        session = creds.signed_session()
-
-        init_call = mock.call('https://login.microsoftonline.com/common')
-        self.assertEqual(init_call, MockContext.call_args)
-
+        context = mock.Mock()
+        auth = aad.AdalUserPassCredentials(username, password)
+        token = auth.acquire_token(context)
         acquire_call = mock.call.acquire_token_with_username_password(
-                'https://management.core.windows.net/', username, password,
-                '04b07795-8ddb-461a-bbee-02f9e1bf7b46')
-        self.assertEqual(acquire_call, returned_context.method_calls[0])
-
-        auth_header = session.headers['Authorization']
-        self.assertEqual(auth_header,
-                         ' '.join([token[aad._TOKEN_ENTRY_TOKEN_TYPE],
-                                   token[aad._ACCESS_TOKEN]]))
+                auth.resource, username, password, auth.client_id)
+        self.assertEqual(context.method_calls, [acquire_call])
 
 
 if __name__ == '__main__':
