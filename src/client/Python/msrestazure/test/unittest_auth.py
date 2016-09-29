@@ -366,16 +366,38 @@ import msrestazure.azure_active_directory as aad
 
 class TestAdalAuthentication(unittest.TestCase):
 
+    """Test authentication using adal."""
+
     def test_base_init(self):
+        # Test aad.AdalAuthentication.__init__().
         endpoint = "https://localhost"
         tenant = "test-tenant"
         auth = aad.AdalAuthentication(auth_endpoint=endpoint, tenant=tenant)
         self.assertEqual(auth.authority, urljoin(endpoint, tenant))
 
-    def test_signed_session(self):
-        raise unittest.SkipTest
+    @mock.patch("adal.AuthenticationContext")
+    def test_signed_session(self, AuthMock):
+        # Test aad.AdalAuthentication.signed_session().
+        sentinel = object()
+        AuthMock.return_value = sentinel
+        access_token = "access-token"
+        token_type = "token-type"
+        token_data = {aad._TOKEN_ENTRY_TOKEN_TYPE: token_type,
+                      aad._ACCESS_TOKEN: access_token}
+        class FakeAuth(aad.AdalAuthentication):
+            def acquire_token(self, context):
+                self.context = context
+                return token_data
+
+        auth =FakeAuth()
+        token = auth.signed_session()
+        self.assertEqual(AuthMock.call_args, mock.call(auth.authority))
+        self.assertEqual(token.headers["Authorization"],
+                         " ".join([token_type, access_token]))
+        self.assertIs(auth.context, sentinel)
 
     def test_username_password(self):
+        # Test aad.AdaluserPassCredentials.
         username = 'msrestazure-test'
         password = 'password'
         context = mock.Mock()

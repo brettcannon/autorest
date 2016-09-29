@@ -860,10 +860,13 @@ from msrest import authentication as msrest_auth
 
 class AdalAuthentication(msrest_auth.Authentication):
 
+    """Base class for adal-derived authentication."""
+
     def __init__(self, client_id="04b07795-8ddb-461a-bbee-02f9e1bf7b46",
                  tenant="common",
                  auth_endpoint="https://login.microsoftonline.com",
                  resource="https://management.core.windows.net/"):
+        """Handle details common to adal."""
         super(AdalAuthentication, self).__init__()
         self.client_id = client_id  # Default value is xplat client ID.
         self.authority = urljoin(auth_endpoint, tenant)
@@ -871,12 +874,14 @@ class AdalAuthentication(msrest_auth.Authentication):
 
     # @abc.abstractmethod if we didn't support Python 2.
     def acquire_token(self, context):
+        """Override with code that returns an adal.acquire_*() call."""
         raise NotImplementedError
 
     def signed_session(self):
+        """Return a signed session."""
         session = super(AdalAuthentication, self).signed_session()
         context = adal.AuthenticationContext(self.authority)
-        token_entry = context.acquire_token(context)
+        token_entry = self.acquire_token(context)
         header = "{} {}".format(token_entry[_TOKEN_ENTRY_TOKEN_TYPE],
                                 token_entry[_ACCESS_TOKEN])
         session.headers['Authorization'] = header
@@ -884,6 +889,8 @@ class AdalAuthentication(msrest_auth.Authentication):
 
 
 class AdalUserPassCredentials(AdalAuthentication):
+
+    """Authenticate with AAD using a username and password."""
 
     def __init__(self, username, password, **kwargs):
         super(AdalUserPassCredentials, self).__init__(**kwargs)
