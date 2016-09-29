@@ -31,6 +31,10 @@ try:
     from unittest import mock
 except ImportError:
     import mock
+try:
+    from urlparse import urljoin
+except ImportError:
+    from urllib.parse import urljoin
 
 from requests_oauthlib import OAuth2Session
 import oauthlib
@@ -363,7 +367,10 @@ import msrestazure.azure_active_directory as aad
 class TestAdalAuthentication(unittest.TestCase):
 
     def test_base_init(self):
-        raise unittest.SkipTest
+        endpoint = "https://localhost"
+        tenant = "test-tenant"
+        auth = aad.AdalAuthentication(auth_endpoint=endpoint, tenant=tenant)
+        self.assertEqual(auth.authority, urljoin(endpoint, tenant))
 
     def test_signed_session(self):
         raise unittest.SkipTest
